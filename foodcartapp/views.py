@@ -1,8 +1,10 @@
+import json
+
 from django.http import JsonResponse
 from django.templatetags.static import static
+import phonenumbers
 
-
-from .models import Product
+from .models import Product, Order, OrderItem
 
 
 def banners_list_api(request):
@@ -58,5 +60,29 @@ def product_list_api(request):
 
 
 def register_order(request):
-    # TODO это лишь заглушка
-    return JsonResponse({})
+    try:
+        serialized_order = json.loads(request.body.decode())
+    except ValueError:
+        return JsonResponse({
+            'error': 'Cannot serialize json',
+        })
+    parsed_phone_number = phonenumbers.parse(
+        serialized_order['phonenumber'],
+        'RU'
+    )
+    normalized_phone_number = phonenumbers.format_number(
+                parsed_phone_number,
+                phonenumbers.PhoneNumberFormat.E164
+            )
+    order = Order.objects.create(
+        client_name=serialized_order['firstname'],
+        client_surname=serialized_order['lastname'],
+        address=serialized_order['address'],
+        contact_phone=normalized_phone_number
+    )
+    for position in serialized_order['products']:
+        order.items.create(
+            product_id=position['product'],
+            quantity=position['quantity']
+        )
+    return JsonResponse(data=serialized_order)
