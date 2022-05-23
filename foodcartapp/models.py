@@ -125,28 +125,21 @@ class RestaurantMenuItem(models.Model):
 
 
 class Order(models.Model):
-    client_name = models.CharField(
+    firstname = models.CharField(
         'имя клиента',
         max_length=50,
     )
-    client_surname = models.CharField(
+    lastname = models.CharField(
         'фамилия клиента',
         max_length=50,
-        blank=True,
     )
     address = models.CharField(
         'адрес',
         max_length=100,
     )
-    contact_phone = PhoneNumberField(
+    phonenumber = PhoneNumberField(
         'номер телефона клиента',
         db_index=True,
-    )
-    products = models.ManyToManyField(
-        Product,
-        related_name='orders',
-        verbose_name='продукты',
-        through='OrderItem',
     )
 
     class Meta:
@@ -154,13 +147,13 @@ class Order(models.Model):
         verbose_name_plural = 'заказы'
 
     def __str__(self):
-        return f"{self.client_name} {self.client_surname} {self.contact_phone}"
+        return f"{self.firstname} {self.lastname} {self.phonenumber}"
 
 
-class OrderItem(models.Model):
+class OrderProductItem(models.Model):
     order = models.ForeignKey(
         Order,
-        related_name='items',
+        related_name='products',
         verbose_name='заказ',
         on_delete=models.CASCADE,
     )

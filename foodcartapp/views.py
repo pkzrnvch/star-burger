@@ -1,13 +1,15 @@
 import json
+from collections import OrderedDict
 
 from django.http import JsonResponse
 from django.templatetags.static import static
 import phonenumbers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import serializers
 
 
-from .models import Product, Order, OrderItem
+from .models import Product, Order, OrderProductItem
 
 
 def banners_list_api(request):
@@ -62,51 +64,51 @@ def product_list_api(request):
     })
 
 
+class OrderProductItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderProductItem
+        fields = ['product', 'quantity']
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    products = OrderProductItemSerializer(many=True, allow_empty=False)
+
+    class Meta:
+        model = Order
+        fields = ['firstname', 'lastname', 'address', 'phonenumber', 'products']
+        extra_kwargs = {
+            "phonenumber": {
+                "validators": [],
+            },
+        }
+
+    def validate_phonenumber(self, value):
+        try:
+            parsed_phone_number = phonenumbers.parse(
+                value,
+                'RU'
+            )
+        except phonenumbers.NumberParseException:
+            raise serializers.ValidationError(['Некорректный номер телефона'])
+        if not phonenumbers.is_valid_number(parsed_phone_number):
+            raise serializers.ValidationError(['Некорректный номер телефона'])
+        normalized_phone_number = phonenumbers.format_number(
+            parsed_phone_number,
+            phonenumbers.PhoneNumberFormat.E164
+        )
+        return normalized_phone_number
+
+    def create(self, validated_data):
+        order_items_data = validated_data.pop('products')
+        order = Order.objects.create(**validated_data)
+        for order_item_data in order_items_data:
+            OrderProductItem.objects.create(order=order, **order_item_data)
+        return order
+
+
 @api_view(['POST'])
 def register_order(request):
-    order_details = request.data
-    if 'products' not in order_details:
-        return Response(['Products field is required'], status=400)
-    if order_details['products'] is None:
-        return Response(['Products field cannot be empty'], status=400)
-    if not isinstance(order_details['products'], list):
-        return Response(['Products must be a list'], status=400)
-    if not order_details['products']:
-        return Response(['Products cannot be an empty list'], status=400)
-    all_product_ids = list(Product.objects.all().values_list('id', flat=True))
-    order_product_ids = [position['product'] for position in order_details['products']]
-    print(order_product_ids)
-    for product_id in order_product_ids:
-        if product_id not in all_product_ids:
-            return Response(['Invalid product id'], status=400)
-    if any(not i for i in order_details.values()):
-        return Response(['This field cannot be empty'], status=400)
-    keys_to_check = ['firstname', 'lastname', 'address', 'phonenumber']
-    for key in keys_to_check:
-        if key not in order_details:
-            return Response(['Missing a required field'], status=400)
-        if not isinstance(order_details[key], str):
-            return Response(['This field has to be string'], status=400)
-    print(order_details)
-    parsed_phone_number = phonenumbers.parse(
-        order_details['phonenumber'],
-        'RU'
-    )
-    if not phonenumbers.is_valid_number(parsed_phone_number):
-        return Response(['Invalid phone number'], status=400)
-    normalized_phone_number = phonenumbers.format_number(
-                parsed_phone_number,
-                phonenumbers.PhoneNumberFormat.E164
-            )
-    order = Order.objects.create(
-        client_name=order_details['firstname'],
-        client_surname=order_details['lastname'],
-        address=order_details['address'],
-        contact_phone=normalized_phone_number
-    )
-    for position in order_details['products']:
-        order.items.create(
-            product_id=position['product'],
-            quantity=position['quantity']
-        )
-    return Response(order_details)
+    serializer = OrderSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data)
