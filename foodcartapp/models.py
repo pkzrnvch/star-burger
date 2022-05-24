@@ -127,12 +127,8 @@ class RestaurantMenuItem(models.Model):
 
 class OrderQuerySet(models.QuerySet):
     def with_order_sum(self):
-        prefetch = Prefetch(
-            'products',
-            queryset=OrderProductItem.objects
-                                     .select_related('product'))
-        return self.prefetch_related(prefetch).annotate(
-            order_sum=Sum(F('products__quantity') * F('products__product__price'))
+        return self.prefetch_related('products').annotate(
+            order_sum=Sum(F('products__quantity') * F('products__price'))
         )
 
 
@@ -179,6 +175,12 @@ class OrderProductItem(models.Model):
     quantity = models.SmallIntegerField(
         'количество',
         validators=[MinValueValidator(1)]
+    )
+    price = models.DecimalField(
+        'Цена',
+        max_digits=8,
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
     )
 
     class Meta:

@@ -18,7 +18,8 @@ class RestaurantMenuItemInline(admin.TabularInline):
 
 class OrderProductItemInline(admin.TabularInline):
     model = OrderProductItem
-    extra = 0
+    readonly_fields = ('price',)
+    extra = 1
 
 
 @admin.register(Restaurant)
@@ -121,3 +122,10 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [
         OrderProductItemInline
     ]
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        for instance in instances:
+            instance.price = instance.product.price
+            instance.save()
+        formset.save()
