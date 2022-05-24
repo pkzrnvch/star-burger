@@ -1,13 +1,10 @@
-import json
-from collections import OrderedDict
-
+import phonenumbers
+from django.db import transaction
 from django.http import JsonResponse
 from django.templatetags.static import static
-import phonenumbers
+from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import serializers
-
 
 from .models import Product, Order, OrderProductItem
 
@@ -98,6 +95,7 @@ class OrderSerializer(serializers.ModelSerializer):
         )
         return normalized_phone_number
 
+    @transaction.atomic
     def create(self, validated_data):
         order_items_data = validated_data.pop('products')
         order = Order.objects.create(**validated_data)
