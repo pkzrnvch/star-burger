@@ -19,7 +19,7 @@ class RestaurantMenuItemInline(admin.TabularInline):
 class OrderProductItemInline(admin.TabularInline):
     model = OrderProductItem
     readonly_fields = ('price',)
-    extra = 1
+    extra = 0
 
 
 @admin.register(Restaurant)
