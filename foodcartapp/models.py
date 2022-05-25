@@ -169,6 +169,10 @@ class Order(models.Model):
         default=UNPROCESSED,
         db_index=True
     )
+    comment = models.TextField(
+        'комментарий',
+        blank=True
+    )
 
     objects = OrderQuerySet.as_manager()
 
