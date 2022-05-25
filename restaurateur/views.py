@@ -11,6 +11,7 @@ from django.contrib.auth import views as auth_views
 from foodcartapp.models import Product, Restaurant, Order
 
 
+
 class Login(forms.Form):
     username = forms.CharField(
         label='Логин', max_length=75, required=True,
@@ -98,5 +99,5 @@ def view_restaurants(request):
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
     return render(request, template_name='order_items.html', context={
-        'order_items': Order.objects.with_order_sum()
+        'order_items': Order.objects.with_order_sum().exclude(status=Order.COMPLETED)
     })

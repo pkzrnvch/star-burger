@@ -131,8 +131,21 @@ class OrderQuerySet(models.QuerySet):
             order_sum=Sum(F('products__quantity') * F('products__price'))
         )
 
+    def unfinished_only(self):
+        pass
+
 
 class Order(models.Model):
+    UNPROCESSED = 'UNPRCSSED'
+    INPROCESS = 'INPROCESS'
+    COMPLETED = 'COMPLETED'
+
+    ORDER_STATUS_CHOICES = [
+        (UNPROCESSED, 'Не обработан'),
+        (INPROCESS, 'В процессе'),
+        (COMPLETED, 'Завершен')
+    ]
+
     firstname = models.CharField(
         'имя клиента',
         max_length=50,
@@ -148,6 +161,13 @@ class Order(models.Model):
     phonenumber = PhoneNumberField(
         'номер телефона клиента',
         db_index=True,
+    )
+    status = models.CharField(
+        'статус заказа',
+        max_length=9,
+        choices=ORDER_STATUS_CHOICES,
+        default=UNPROCESSED,
+        db_index=True
     )
 
     objects = OrderQuerySet.as_manager()
