@@ -138,13 +138,23 @@ class OrderQuerySet(models.QuerySet):
 
 class Order(models.Model):
     UNPROCESSED = 'UNPRCSSED'
-    INPROCESS = 'INPROCESS'
+    IN_PROCESS = 'INPROCESS'
     COMPLETED = 'COMPLETED'
+
+    BANK_CARD = 'B'
+    CASH = 'C'
+    NOT_DEFINED = 'N'
 
     ORDER_STATUS_CHOICES = [
         (UNPROCESSED, 'Не обработан'),
-        (INPROCESS, 'В процессе'),
+        (IN_PROCESS, 'В процессе'),
         (COMPLETED, 'Завершен')
+    ]
+
+    ORDER_PAYMENT_CHOICES = [
+        (BANK_CARD, 'Картой'),
+        (CASH, 'Наличными'),
+        (NOT_DEFINED, 'Не определен')
     ]
 
     firstname = models.CharField(
@@ -168,6 +178,13 @@ class Order(models.Model):
         max_length=9,
         choices=ORDER_STATUS_CHOICES,
         default=UNPROCESSED,
+        db_index=True
+    )
+    payment_method = models.CharField(
+        'способ платежа',
+        max_length=1,
+        choices=ORDER_PAYMENT_CHOICES,
+        default=NOT_DEFINED,
         db_index=True
     )
     comment = models.TextField(
