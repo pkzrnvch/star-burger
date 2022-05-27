@@ -10,7 +10,7 @@ from .models import ProductCategory
 from .models import Restaurant
 from .models import RestaurantMenuItem
 from .models import Order
-from .models import OrderProductItem
+from .models import OrderItem
 
 
 class RestaurantMenuItemInline(admin.TabularInline):
@@ -18,8 +18,8 @@ class RestaurantMenuItemInline(admin.TabularInline):
     extra = 0
 
 
-class OrderProductItemInline(admin.TabularInline):
-    model = OrderProductItem
+class OrderItemInline(admin.TabularInline):
+    model = OrderItem
     readonly_fields = ('price',)
     extra = 0
 
@@ -122,7 +122,7 @@ class OrderAdmin(admin.ModelAdmin):
         'phonenumber',
     ]
     inlines = [
-        OrderProductItemInline
+        OrderItemInline
     ]
 
     def response_post_save_change(self, request, obj):

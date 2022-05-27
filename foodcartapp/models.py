@@ -132,9 +132,6 @@ class OrderQuerySet(models.QuerySet):
             order_sum=Sum(F('products__quantity') * F('products__price'))
         )
 
-    def unfinished_only(self):
-        pass
-
 
 class Order(models.Model):
     UNPROCESSED = 'UNPRCSSED'
@@ -219,7 +216,7 @@ class Order(models.Model):
         return f"{self.firstname} {self.lastname} {self.phonenumber}"
 
 
-class OrderProductItem(models.Model):
+class OrderItem(models.Model):
     order = models.ForeignKey(
         Order,
         related_name='products',

@@ -6,7 +6,7 @@ from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .models import Product, Order, OrderProductItem
+from .models import Product, Order, OrderItem
 
 
 def banners_list_api(request):
@@ -61,14 +61,14 @@ def product_list_api(request):
     })
 
 
-class OrderProductItemSerializer(serializers.ModelSerializer):
+class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
-        model = OrderProductItem
+        model = OrderItem
         fields = ['product', 'quantity']
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    products = OrderProductItemSerializer(many=True, allow_empty=False)
+    products = OrderItemSerializer(many=True, allow_empty=False)
 
     class Meta:
         model = Order
@@ -97,13 +97,13 @@ class OrderSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        order_items_data = validated_data.pop('products')
+        order_items = validated_data.pop('products')
         order = Order.objects.create(**validated_data)
-        for order_item_data in order_items_data:
-            OrderProductItem.objects.create(
+        for order_item in order_items:
+            OrderItem.objects.create(
                 order=order,
-                price=order_item_data['product'].price,
-                **order_item_data
+                price=order_item['product'].price,
+                **order_item
             )
         return order
 
