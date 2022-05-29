@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django import forms
 from django.shortcuts import redirect, render
 from django.views import View
@@ -8,7 +10,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
 
-from foodcartapp.models import Product, Restaurant, Order
+from foodcartapp.models import Product, Restaurant, Order, RestaurantMenuItem, OrderItem
 
 
 
@@ -98,6 +100,22 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
+    orders_to_show = Order.objects.with_order_sum().exclude(status=Order.COMPLETED).select_related('restaurant')
+    restaurant_menu_items = (RestaurantMenuItem.objects
+                                               .filter(availability=True)
+                                               .select_related('restaurant'))
+    restaurants_for_products = defaultdict(set)
+    for menu_item in restaurant_menu_items:
+        restaurants_for_products[menu_item.product_id].add(menu_item.restaurant)
+    print(restaurants_for_products)
+    for order in orders_to_show:
+        product_ids = (product.product_id for product in order.products.all())
+        available_restaurants = restaurants_for_products[next(product_ids)]
+        for product_id in product_ids:
+            available_restaurants &= restaurants_for_products[product_id]
+        print(available_restaurants)
+        order.available_restaurants = \
+            [restaurant.name for restaurant in available_restaurants]
     return render(request, template_name='order_items.html', context={
-        'order_items': Order.objects.with_order_sum().exclude(status=Order.COMPLETED)
+        'order_items': orders_to_show
     })
