@@ -43,7 +43,7 @@
             <summary style="cursor: pointer;">Доступные рестораны:</summary>
             <ul style="padding: 0; margin-left: 0;">
               {% for restaurnt in item.available_restaurants %}
-              <li>{{ restaurnt }}</li>
+              <li>{{ restaurnt.name }} - {{ restaurnt.distance_to_order }}</li>
               {% endfor %}
             </ul>
           </details>
