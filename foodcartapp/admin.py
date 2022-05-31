@@ -1,9 +1,12 @@
+from collections import defaultdict
+
 from django.contrib import admin
 from django.shortcuts import reverse, redirect
 from django.templatetags.static import static
 from django.utils.html import format_html
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.conf import settings
+from django import forms
 
 from .models import Product
 from .models import ProductCategory
@@ -116,14 +119,32 @@ class ProductAdmin(admin.ModelAdmin):
     pass
 
 
+class OrderAdminForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(OrderAdminForm, self).__init__(*args, **kwargs)
+        product_ids = (product.product_id for product in self.instance.products.all())
+        restaurants_for_products = defaultdict(set)
+        restaurant_menu_items = (RestaurantMenuItem.objects
+                                 .filter(availability=True))
+        for menu_item in restaurant_menu_items:
+            restaurants_for_products[menu_item.product_id].add(menu_item.restaurant_id)
+        available_restaurants = restaurants_for_products[next(product_ids)]
+        for product_id in product_ids:
+            available_restaurants &= restaurants_for_products[product_id]
+        self.fields['restaurant'].queryset = \
+            self.fields['restaurant'].queryset.filter(id__in=available_restaurants)
+
+
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
+    list_select_related = True
     search_fields = [
         'phonenumber',
     ]
     inlines = [
         OrderItemInline
     ]
+    form = OrderAdminForm
 
     def response_post_save_change(self, request, obj):
         standard_response = super().response_post_save_change(request, obj)
