@@ -148,7 +148,7 @@ class OrderAdmin(admin.ModelAdmin):
 
     def response_post_save_change(self, request, obj):
         standard_response = super().response_post_save_change(request, obj)
-        redirect_to = request.GET['next']
+        redirect_to = request.GET.get('next')
         url_is_safe = url_has_allowed_host_and_scheme(
             url=redirect_to,
             allowed_hosts=settings.ALLOWED_HOSTS,
@@ -161,6 +161,7 @@ class OrderAdmin(admin.ModelAdmin):
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
         for instance in instances:
-            instance.price = instance.product.price
+            if not instance.price:
+                instance.price = instance.product.price
             instance.save()
         formset.save()
