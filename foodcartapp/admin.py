@@ -122,7 +122,7 @@ class ProductAdmin(admin.ModelAdmin):
 class OrderAdminForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(OrderAdminForm, self).__init__(*args, **kwargs)
-        product_ids = (product.product_id for product in self.instance.products.all())
+        product_ids = (order_item.product_id for order_item in self.instance.items.all())
         restaurants_for_products = defaultdict(set)
         restaurant_menu_items = (RestaurantMenuItem.objects
                                  .filter(availability=True))

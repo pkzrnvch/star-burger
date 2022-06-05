@@ -128,8 +128,8 @@ class RestaurantMenuItem(models.Model):
 
 class OrderQuerySet(models.QuerySet):
     def with_order_sum(self):
-        return self.prefetch_related('products').annotate(
-            order_sum=Sum(F('products__quantity') * F('products__price'))
+        return self.prefetch_related('items').annotate(
+            order_sum=Sum(F('items__quantity') * F('items__price'))
         )
 
 
@@ -227,13 +227,14 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(
         Order,
-        related_name='products',
+        related_name='items',
         verbose_name='заказ',
         on_delete=models.CASCADE,
     )
     product = models.ForeignKey(
         Product,
         verbose_name='продукт',
+        related_name='order_items',
         on_delete=models.PROTECT,
     )
     quantity = models.SmallIntegerField(
