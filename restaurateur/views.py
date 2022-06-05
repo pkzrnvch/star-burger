@@ -144,26 +144,36 @@ def view_orders(request):
     restaurant_menu_items = (RestaurantMenuItem.objects
                                                .filter(availability=True)
                                                .select_related('restaurant'))
-    coordinates_for_restaurant = {}
+    addresses = set()
     for restaurant in Restaurant.objects.all():
-        coordinates_for_restaurant[restaurant.id] = get_coordinates(
-            restaurant.address
-        )
+        addresses.add(restaurant.address)
+    for order in orders_to_show:
+        addresses.add(order.address)
+    places = Place.objects.filter(address__in=addresses)
+    coordinates_for_place = {}
+    for place in places:
+        coordinates_for_place[place.address] = (place.lat, place.lon)
     restaurants_for_products = defaultdict(set)
     for menu_item in restaurant_menu_items:
+        menu_item.restaurant.coordinates = \
+            coordinates_for_place.get(menu_item.restaurant.address)
+        if not menu_item.restaurant.coordinates:
+            menu_item.restaurant.coordinates = \
+                get_coordinates(menu_item.restaurant.address)
         restaurants_for_products[menu_item.product_id].add(menu_item.restaurant)
     for order in orders_to_show:
-        product_ids = (product.product_id for product in order.products.all())
+        product_ids = (order_item.product_id for order_item in order.items.all())
         available_restaurants = restaurants_for_products[next(product_ids)]
         for product_id in product_ids:
             available_restaurants &= restaurants_for_products[product_id]
-        order_coordinates = get_coordinates(order.address)
+        order_coordinates = coordinates_for_place.get(order.address)
+        if not order_coordinates:
+            order_coordinates = get_coordinates(order.address)
         for restaurant in available_restaurants:
-            restaurant_coordinates = coordinates_for_restaurant[restaurant.id]
-            if order_coordinates and restaurant_coordinates:
+            if order_coordinates and restaurant.coordinates:
                 distance_to_order = distance.distance(
                     order_coordinates,
-                    restaurant_coordinates
+                    restaurant.coordinates
                 ).km
                 restaurant.distance_to_order = f'{round(distance_to_order, 3)} км'
             else:

@@ -68,7 +68,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    products = OrderItemSerializer(many=True, allow_empty=False)
+    products = OrderItemSerializer(many=True, allow_empty=False, source='items')
 
     class Meta:
         model = Order
@@ -97,14 +97,16 @@ class OrderSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        order_items = validated_data.pop('products')
+        order_items_details = validated_data.pop('items')
         order = Order.objects.create(**validated_data)
-        for order_item in order_items:
-            OrderItem.objects.create(
+        order_items = []
+        for order_item_details in order_items_details:
+            order_items.append(OrderItem(
                 order=order,
-                price=order_item['product'].price,
-                **order_item
-            )
+                price=order_item_details['product'].price,
+                **order_item_details
+            ))
+        OrderItem.objects.bulk_create(order_items)
         return order
 
 
