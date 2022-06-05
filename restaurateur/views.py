@@ -140,7 +140,8 @@ def view_orders(request):
     orders_to_show = (Order.objects
                            .with_order_sum()
                            .exclude(status=Order.COMPLETED)
-                           .select_related('restaurant'))
+                           .select_related('restaurant')
+                           .order_by('-status'))
     restaurant_menu_items = (RestaurantMenuItem.objects
                                                .filter(availability=True)
                                                .select_related('restaurant'))

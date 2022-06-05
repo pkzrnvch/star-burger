@@ -165,3 +165,8 @@ class OrderAdmin(admin.ModelAdmin):
                 instance.price = instance.product.price
             instance.save()
         formset.save()
+
+    def save_model(self, request, obj, form, change):
+        if obj.status == Order.UNPROCESSED and obj.restaurant:
+            obj.status = Order.IN_PROCESS
+        super().save_model(request, obj, form, change)
