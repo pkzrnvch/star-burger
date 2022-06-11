@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django.db import models
 from django.db.models import F, Sum
 from django.utils import timezone
@@ -131,6 +133,21 @@ class OrderQuerySet(models.QuerySet):
         return self.prefetch_related('items').annotate(
             order_sum=Sum(F('items__quantity') * F('items__price'))
         )
+
+    def with_available_restaurants(self):
+        restaurant_menu_items = (RestaurantMenuItem.objects
+                                 .filter(availability=True)
+                                 .select_related('restaurant'))
+        restaurants_for_products = defaultdict(set)
+        for menu_item in restaurant_menu_items:
+            restaurants_for_products[menu_item.product_id].add(menu_item.restaurant)
+        for order in self:
+            product_ids = (order_item.product_id for order_item in order.items.all())
+            available_restaurants = restaurants_for_products[next(product_ids)]
+            for product_id in product_ids:
+                available_restaurants &= restaurants_for_products[product_id]
+            order.available_restaurants = list(available_restaurants)
+        return self
 
 
 class Order(models.Model):

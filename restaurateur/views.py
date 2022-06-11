@@ -139,14 +139,12 @@ def get_coordinates(address):
 def view_orders(request):
     orders_to_show = (Order.objects
                            .with_order_sum()
+                           .order_by('-status')
                            .exclude(status=Order.COMPLETED)
-                           .select_related('restaurant')
-                           .order_by('-status'))
-    restaurant_menu_items = (RestaurantMenuItem.objects
-                                               .filter(availability=True)
-                                               .select_related('restaurant'))
+                           .with_available_restaurants())
     addresses = set()
-    for restaurant in Restaurant.objects.all():
+    all_restaurants = Restaurant.objects.all()
+    for restaurant in all_restaurants:
         addresses.add(restaurant.address)
     for order in orders_to_show:
         addresses.add(order.address)
@@ -154,23 +152,16 @@ def view_orders(request):
     coordinates_for_place = {}
     for place in places:
         coordinates_for_place[place.address] = (place.lat, place.lon)
-    restaurants_for_products = defaultdict(set)
-    for menu_item in restaurant_menu_items:
-        menu_item.restaurant.coordinates = \
-            coordinates_for_place.get(menu_item.restaurant.address)
-        if not menu_item.restaurant.coordinates:
-            menu_item.restaurant.coordinates = \
-                get_coordinates(menu_item.restaurant.address)
-        restaurants_for_products[menu_item.product_id].add(menu_item.restaurant)
+    for restaurant in all_restaurants:
+        if restaurant.address not in coordinates_for_place:
+            coordinates_for_place[restaurant.address] = \
+                get_coordinates(restaurant.address)
     for order in orders_to_show:
-        product_ids = (order_item.product_id for order_item in order.items.all())
-        available_restaurants = restaurants_for_products[next(product_ids)]
-        for product_id in product_ids:
-            available_restaurants &= restaurants_for_products[product_id]
         order_coordinates = coordinates_for_place.get(order.address)
         if not order_coordinates:
             order_coordinates = get_coordinates(order.address)
-        for restaurant in available_restaurants:
+        for restaurant in order.available_restaurants:
+            restaurant.coordinates = coordinates_for_place[restaurant.address]
             if order_coordinates and restaurant.coordinates:
                 distance_to_order = distance.distance(
                     order_coordinates,
@@ -179,8 +170,6 @@ def view_orders(request):
                 restaurant.distance_to_order = f'{round(distance_to_order, 3)} км'
             else:
                 restaurant.distance_to_order = 'Ошибка геокодера'
-        order.available_restaurants = \
-            [restaurant for restaurant in available_restaurants]
     return render(request, template_name='order_items.html', context={
         'order_items': orders_to_show
     })
