@@ -7,30 +7,20 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .models import Product, Order, OrderItem
+from banners.models import Banner
 
 
-def banners_list_api(request):
-    # FIXME move data to db?
-    return JsonResponse([
-        {
-            'title': 'Burger',
-            'src': static('burger.jpg'),
-            'text': 'Tasty Burger at your door step',
-        },
-        {
-            'title': 'Spices',
-            'src': static('food.jpg'),
-            'text': 'All Cuisines',
-        },
-        {
-            'title': 'New York',
-            'src': static('tasty.jpg'),
-            'text': 'Food is incomplete without a tasty dessert',
-        }
-    ], safe=False, json_dumps_params={
-        'ensure_ascii': False,
-        'indent': 4,
-    })
+class BannerSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=50)
+    src = serializers.URLField(source='image.url')
+    text = serializers.CharField()
+
+
+@api_view()
+def banners_list_api(request, slug):
+    banners = Banner.objects.filter(place__slug=slug)
+    serializer = BannerSerializer(banners, many=True)
+    return Response(serializer.data)
 
 
 def product_list_api(request):

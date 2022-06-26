@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'foodcartapp.apps.FoodcartappConfig',
     'restaurateur.apps.RestaurateurConfig',
     'coordinates.apps.CoordinatesConfig',
+    'banners.apps.BannersConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -31,6 +32,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'phonenumber_field',
     'rest_framework',
+    'adminsortable2',
 ]
 
 MIDDLEWARE = [
