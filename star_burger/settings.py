@@ -18,6 +18,9 @@ DEBUG = env.bool('DEBUG', True)
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', ['127.0.0.1', 'localhost'])
 
+ROLLBAR_TOKEN = env('ROLLBAR_TOKEN')
+ROLLBAR_ENVIRONMENT = env('ROLLBAR_ENVIRONMENT')
+
 INSTALLED_APPS = [
     'foodcartapp.apps.FoodcartappConfig',
     'restaurateur.apps.RestaurateurConfig',
@@ -44,6 +47,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'rollbar.contrib.django.middleware.RollbarNotifierMiddlewareExcluding404',
 ]
 
 ROOT_URLCONF = 'star_burger.urls'
@@ -80,6 +84,14 @@ TEMPLATES = [
         },
     },
 ]
+
+ROLLBAR = {
+    'access_token': ROLLBAR_TOKEN,
+    'environment': ROLLBAR_ENVIRONMENT,
+    'root': BASE_DIR,
+}
+import rollbar
+rollbar.init(**ROLLBAR)
 
 WSGI_APPLICATION = 'star_burger.wsgi.application'
 
