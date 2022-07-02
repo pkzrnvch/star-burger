@@ -1,9 +1,8 @@
 import os
 
 import dj_database_url
-
+import rollbar
 from environs import Env
-
 
 env = Env()
 env.read_env()
