@@ -89,7 +89,6 @@ ROLLBAR = {
     'environment': ROLLBAR_ENVIRONMENT,
     'root': BASE_DIR,
 }
-import rollbar
 rollbar.init(**ROLLBAR)
 
 WSGI_APPLICATION = 'star_burger.wsgi.application'
